@@ -158,17 +158,3 @@ outras bases com a mesma estrutura sem exigir as contagens da demonstração.
 A auditoria também executa **o notebook inteiro** com outro CSV, somente linhas
 inválidas, apenas o cabeçalho, arquivo ausente, cabeçalho incorreto e uma base
 sem suspeitas. Cada cenário precisa executar as 12 células sem erro.
-
-## Entrega
-
-O enunciado exige um **repositório público no GitHub** com o notebook `.ipynb`
-executado e este README. Inclua também o CSV, o script de pandas, o JSON e o
-gráfico para que a análise possa ser reproduzida. O nome sugerido é
-`clearbank-analise`.
-
-Link público para entregar na Rocketseat:
-[JILiraJr/clearbank-analise](https://github.com/JILiraJr/clearbank-analise).
-
-Envie esse link no campo de entrega da Rocketseat.
-Os diretórios `.venv/` e `tmp/` contêm apenas ambiente local e arquivos
-temporários e estão excluídos pelo `.gitignore`.
