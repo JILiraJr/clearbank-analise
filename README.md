@@ -153,6 +153,12 @@ notebook, todas as células executadas em ordem com saídas e sem erros, os
 arquivos gerados e uma **segunda base independente** com outro ano e outros
 valores. Também compara pandas com a solução nativa nessa segunda base.
 
+Os testes internos usam uma amostra fixa em memória. A execução principal aceita
+outras bases com a mesma estrutura sem exigir as contagens da demonstração.
+A auditoria também executa **o notebook inteiro** com outro CSV, somente linhas
+inválidas, apenas o cabeçalho, arquivo ausente, cabeçalho incorreto e uma base
+sem suspeitas. Cada cenário precisa executar as 12 células sem erro.
+
 ## Entrega
 
 O enunciado exige um **repositório público no GitHub** com o notebook `.ipynb`

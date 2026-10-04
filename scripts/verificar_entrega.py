@@ -5,6 +5,7 @@ Requer: python -m pip install -r requirements-dev.txt
 """
 
 import ast
+import copy
 import csv
 import json
 import os
@@ -37,6 +38,28 @@ os.environ.setdefault("PYTHONDONTWRITEBYTECODE", "1")
 def conferir(condicao, mensagem):
     if not condicao:
         raise AssertionError(mensagem)
+
+
+def executar_notebook(notebook, pasta):
+    """Executa uma cópia em kernel novo e verifica todas as saídas."""
+    executado = copy.deepcopy(notebook)
+    gerenciador = KernelManager(kernel_name="python3")
+    gerenciador.kernel_spec.argv = [sys.executable, "-m", "ipykernel_launcher", "-f", "{connection_file}"]
+    cliente = NotebookClient(executado, km=gerenciador, timeout=180,
+                             allow_errors=False, resources={"metadata": {"path": str(pasta)}})
+    try:
+        with cliente.setup_kernel():
+            cliente.execute()
+    finally:
+        if gerenciador.has_kernel:
+            gerenciador.shutdown_kernel(now=True)
+    codigo = [celula for celula in executado.cells if celula.cell_type == "code"]
+    conferir([celula.execution_count for celula in codigo] == list(range(1, len(codigo) + 1)),
+             "Todas as células devem ter sido executadas em ordem.")
+    conferir(all(celula.outputs for celula in codigo), "Nenhuma célula de código deve ter saída vazia.")
+    conferir(not any(saida.output_type == "error" for celula in codigo for saida in celula.outputs),
+             "Não pode haver erros nas saídas salvas.")
+    return executado
 
 
 def funcoes_nativas(notebook):
@@ -108,6 +131,41 @@ def conferir_nova_base(funcoes, pasta):
     )
     conferir(resultado_pandas == resultado, "Pandas e nativo devem coincidir também na nova base.")
     print("[OK] Nova base independente: outro ano, quatro válidas, quatro inválidas e limite estrito.", flush=True)
+    return nova_base.read_text(encoding="utf-8")
+
+
+def conferir_fluxos_completos(notebook, pasta, nova_base):
+    """Verifica o notebook inteiro, incluindo testes e opcionais, em seis casos."""
+    cabecalho = "id,data,cliente_id,tipo,valor,descricao,categoria\n"
+    casos = [
+        ("outro-csv", nova_base, (8, 4, 4)),
+        ("somente-invalidas", cabecalho + "1,2026-02-30,CLI001,credito,100.00,Teste,teste\n", (1, 0, 1)),
+        ("somente-cabecalho", cabecalho, (0, 0, 0)),
+        ("arquivo-ausente", None, None),
+        ("cabecalho-incorreto", "id,data\n1,2026-01-01\n", None),
+        ("sem-suspeitas", cabecalho + "1,2026-01-01,CLI001,credito,0.10,Teste,teste\n", (1, 1, 0)),
+    ]
+    for nome, conteudo, contagens in casos:
+        destino = pasta / nome
+        destino.mkdir()
+        shutil.copy2(RAIZ / "analise_pandas.py", destino / "analise_pandas.py")
+        if conteudo is not None:
+            (destino / "transacoes.csv").write_text(conteudo, encoding="utf-8")
+        executado = executar_notebook(notebook, destino)
+        if contagens is None:
+            conferir(not (destino / "relatorio.json").exists(), "Entrada indisponível não gera JSON.")
+            conferir(not (destino / "grafico.png").exists(), "Entrada indisponível não gera gráfico.")
+        else:
+            resultado = json.loads((destino / "relatorio.json").read_text(encoding="utf-8"))
+            conferir((resultado["total_linhas_lidas"], resultado["total_transacoes_validas"],
+                      resultado["total_transacoes_invalidas"]) == contagens, "Contagens do cenário " + nome)
+            conferir((destino / "grafico.png").exists() == bool(contagens[1]), "Gráfico somente com dados válidos.")
+            if nome == "sem-suspeitas":
+                conferir(resultado["transacoes_suspeitas"] == [], "Nenhuma suspeita na base abaixo do limite.")
+                saidas = "".join(saida.get("text", "") for celula in executado.cells
+                                if celula.cell_type == "code" for saida in celula.outputs)
+                conferir("Nenhuma transação suspeita encontrada." in saidas, "Mensagem obrigatória sem suspeitas.")
+        print(f"[OK] Notebook completo: {nome}, todas as 12 células sem erro.", flush=True)
 
 
 def main():
@@ -125,23 +183,9 @@ def main():
         pasta = Path(diretorio)
         for nome in ("transacoes.csv", "analise_pandas.py"):
             shutil.copy2(RAIZ / nome, pasta / nome)
-        gerenciador = KernelManager(kernel_name="python3")
-        gerenciador.kernel_spec.argv = [sys.executable, "-m", "ipykernel_launcher", "-f", "{connection_file}"]
-        cliente = NotebookClient(notebook, km=gerenciador, timeout=180,
-                                 allow_errors=False, resources={"metadata": {"path": str(pasta)}})
         print("Executando todas as células em um kernel novo...", flush=True)
-        try:
-            with cliente.setup_kernel():
-                cliente.execute()
-        finally:
-            if gerenciador.has_kernel:
-                gerenciador.shutdown_kernel(now=True)
+        notebook = executar_notebook(notebook, pasta)
         codigo = [celula for celula in notebook.cells if celula.cell_type == "code"]
-        conferir([celula.execution_count for celula in codigo] == list(range(1, len(codigo) + 1)),
-                 "Todas as células devem ter sido executadas em ordem.")
-        conferir(all(celula.outputs for celula in codigo), "Nenhuma célula de código deve ter saída vazia.")
-        conferir(not any(saida.output_type == "error" for celula in codigo for saida in celula.outputs),
-                 "Não pode haver erros nas saídas salvas.")
         relatorio = json.loads((pasta / "relatorio.json").read_text(encoding="utf-8"))
         conferir((relatorio["total_linhas_lidas"], relatorio["total_transacoes_validas"],
                   relatorio["total_transacoes_invalidas"], relatorio["total_duplicadas"]) == (33, 18, 15, 1),
@@ -151,7 +195,8 @@ def main():
                  [18769.60, 19430.10, -2650.10], "Saldos mensais de referência.")
         conferir([item["id"] for item in relatorio["transacoes_suspeitas"]] == [5, 10], "Duas suspeitas.")
         conferir((pasta / "grafico.png").read_bytes()[:8] == b"\x89PNG\r\n\x1a\n", "PNG válido.")
-        conferir_nova_base(funcoes, pasta)
+        nova_base = conferir_nova_base(funcoes, pasta)
+        conferir_fluxos_completos(notebook, pasta, nova_base)
 
         nbformat.write(notebook, notebook_path)
         for nome in ("relatorio.json", "grafico.png"):
