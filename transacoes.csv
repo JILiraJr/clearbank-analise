@@ -1,0 +1,34 @@
+id,data,cliente_id,tipo,valor,descricao,categoria
+1,2026-01-05,CLI001,credito,3500.00,Salário de janeiro,salario
+2,2026-01-06,CLI001,debito,850.00,Aluguel de janeiro,moradia
+3,2026-01-10,CLI002,credito,4800.00,Salário de janeiro,salario
+4,2026-01-12,CLI002,debito,180.50,"Supermercado, compras da semana",compra
+5,2026-01-15,CLI003,credito,12000.00,Transferência recebida,transferencia
+6,2026-01-28,CLI003,debito,499.90,Compra de equipamento,compra
+7,2026-02-03,CLI001,credito,3500.00,Salário de fevereiro,salario
+8,2026-02-05,CLI001,debito,850.00,Aluguel de fevereiro,moradia
+9,2026-02-08,CLI002,credito,2200.00,Serviço de consultoria,servico
+10,2026-02-14,CLI003,credito,15000.00,Transferência recebida,transferencia
+11,2026-02-18,CLI002,debito,320.00,Conta de luz,conta
+12,2026-02-27,CLI003,debito,99.90,Assinatura de streaming,assinatura
+13,2026-03-01,CLI001,credito,3500.00,Salário de março,salario
+14,2026-03-05,CLI001,debito,850.00,Aluguel de março,moradia
+15,2026-03-09,CLI002,credito,4700.00,Salário de março,salario
+16,2026-03-15,CLI002,debito,10000.00,Pagamento no limite de suspeita,compra
+17,2026-03-21,CLI003,credito,0.10,Pequeno reembolso,reembolso
+18,2026-03-31,CLI003,debito,0.20,Tarifa de serviço,tarifa
+,2026-01-09,CLI001,credito,100.00,ID vazio,teste
+abc,2026-01-09,CLI001,credito,100.00,ID não numérico,teste
+19.5,2026-01-09,CLI001,credito,100.00,ID não inteiro,teste
+19,2026-01-09,,debito,100.00,Cliente vazio,teste
+20,2026-01-09,   ,debito,100.00,Cliente com espaços,teste
+21,2026/04/01,CLI001,credito,100.00,Data com barras,teste
+22,2026-02-30,CLI001,credito,100.00,Data inexistente,teste
+23,2026-4-01,CLI001,credito,100.00,Data sem zero à esquerda,teste
+24,2026-01-09,CLI001,pix,100.00,Tipo não permitido,teste
+25,2026-01-09,CLI001,debito,abc,Valor não numérico,teste
+26,2026-01-09,CLI001,debito,0,Valor igual a zero,teste
+27,2026-01-09,CLI001,debito,-10.00,Valor negativo,teste
+28,2026-01-09,CLI001,debito,nan,Valor não finito NaN,teste
+29,2026-01-09,CLI001,debito,inf,Valor não finito infinito,teste
+1,2026-01-05,CLI001,credito,3500.00,Repetição da transação 1,salario

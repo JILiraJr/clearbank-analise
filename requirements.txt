@@ -1,0 +1,3 @@
+# Requisitos opcionais R01 e R02; a solução principal usa a biblioteca padrão.
+pandas>=2.2,<3.0
+matplotlib>=3.8,<3.11
